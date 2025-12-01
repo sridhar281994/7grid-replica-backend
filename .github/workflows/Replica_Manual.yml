@@ -5,7 +5,6 @@ on:
 
 permissions:
   contents: write
-  workflows: write
 
 jobs:
   replicate-all:
@@ -14,6 +13,8 @@ jobs:
       # Checkout target repo
       - name: Checkout target repo
         uses: actions/checkout@v3
+        with:
+          persist-credentials: false
 
       # Checkout source repo
       - name: Checkout source repo
@@ -49,9 +50,18 @@ jobs:
 
       # Commit & push changes
       - name: Commit & push changes
+        env:
+          REPLICA_PUSH_TOKEN: ${{ secrets.REPLICA_PUSH_TOKEN }}
         run: |
+          if [ -z "$REPLICA_PUSH_TOKEN" ]; then
+            echo "Missing REPLICA_PUSH_TOKEN secret with repo + workflow scopes"
+            exit 1
+          fi
+
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add .
           git commit -m "Replicated all top-level files and folders from source repo" || echo "No changes to commit"
-          git push
+
+          git remote set-url origin https://x-access-token:${REPLICA_PUSH_TOKEN}@github.com/sridhar281994/7grid-replica-backend.git
+          git push origin HEAD:main
