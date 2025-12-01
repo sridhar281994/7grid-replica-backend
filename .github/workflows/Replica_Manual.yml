@@ -1,10 +1,10 @@
-name: Manual Path Replication - Dynamic Folders
+name: Manual Path Replication - Full Mirror
 
 on:
   workflow_dispatch:
 
 jobs:
-  replicate-all-folders:
+  replicate-all:
     runs-on: ubuntu-latest
     steps:
       # Checkout target repo
@@ -19,17 +19,24 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           path: source
 
-      # Dynamically replicate all top-level folders, ignoring .git
-      - name: Replicate all top-level folders
+      # Replicate all top-level files and folders dynamically
+      - name: Replicate all top-level content
         run: |
           shopt -s dotglob
           for item in source/*; do
             name=$(basename "$item")
-            if [ "$name" != ".git" ]; then
-              echo "Replicating $name"
+            if [ "$name" = ".git" ]; then
+              continue
+            fi
+
+            if [ -d "$item" ]; then
+              echo "Replicating folder: $name"
               mkdir -p "./$name"
               rm -rf "./$name"/*
               rsync -a --exclude='.git' "$item/" "./$name/"
+            elif [ -f "$item" ]; then
+              echo "Replicating file: $name"
+              cp -f "$item" "./$name"
             fi
           done
 
@@ -39,5 +46,5 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add .
-          git commit -m "Replicated all top-level folders from source repo" || echo "No changes to commit"
+          git commit -m "Replicated all top-level files and folders from source repo" || echo "No changes to commit"
           git push
