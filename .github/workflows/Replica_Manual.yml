@@ -1,10 +1,10 @@
-name: Manual Path Replication
+name: Manual Path Replication - Dynamic Folders
 
 on:
   workflow_dispatch:
 
 jobs:
-  replicate-routers:
+  replicate-all-folders:
     runs-on: ubuntu-latest
     steps:
       # Checkout target repo (self)
@@ -19,19 +19,28 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           path: source
 
-      # Copy routers folder from source to target
-      - name: Replicate routers folder
+      # Dynamically replicate all top-level folders
+      - name: Replicate all top-level folders
         run: |
-          # Remove old routers folder content
-          rm -rf ./routers/*
-          # Copy new content from source repo
-          cp -r source/routers/* ./routers/
+          # Loop through all top-level folders in the source repo
+          for folder in source/*; do
+            if [ -d "$folder" ]; then
+              folder_name=$(basename "$folder")
+              echo "Replicating folder: $folder_name"
+              # Ensure target folder exists
+              mkdir -p ./$folder_name
+              # Remove old content
+              rm -rf ./$folder_name/*
+              # Copy all files and subfolders
+              cp -a "$folder/." "./$folder_name/"
+            fi
+          done
 
       # Commit & push changes
       - name: Commit & push changes
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add ./routers
-          git commit -m "Replicated routers folder from source repo" || echo "No changes to commit"
+          git add .
+          git commit -m "Replicated all top-level folders from source repo" || echo "No changes to commit"
           git push
