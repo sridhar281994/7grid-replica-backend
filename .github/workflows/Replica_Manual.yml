@@ -7,6 +7,9 @@ jobs:
   replicate-path:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout target repo (self)
+        uses: actions/checkout@v3
+
       - name: Checkout source repo
         uses: actions/checkout@v3
         with:
@@ -14,23 +17,14 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           path: source
 
-      - name: Checkout target repo
-        uses: actions/checkout@v3
-        with:
-          repository: sridhar281994/7grid-replica-backend
-          token: ${{ secrets.GITHUB_TOKEN }}
-          path: target
-
       - name: Copy files
         run: |
-          # Clear old files in target folder if needed
-          rm -rf target/*
-          # Copy everything from source to target
-          cp -r source/* target/
+          # Replace target folder content with source
+          rm -rf ./path-to-replace/*
+          cp -r source/path-to-copy/* ./path-to-replace/
 
       - name: Commit & push changes
         run: |
-          cd target
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add .
