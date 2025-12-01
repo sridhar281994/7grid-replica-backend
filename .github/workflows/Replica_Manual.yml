@@ -23,14 +23,13 @@ jobs:
       - name: Replicate all top-level folders
         run: |
           shopt -s dotglob
-          for folder in source/*; do
-            if [ -d "$folder" ]; then
-              folder_name=$(basename "$folder")
-              echo "Replicating folder: $folder_name"
-              mkdir -p ./$folder_name
-              rm -rf ./$folder_name/*
-              # Copy all files and subfolders but NOT the .git folder
-              rsync -a --exclude='.git' "$folder/" "./$folder_name/"
+          for item in source/*; do
+            name=$(basename "$item")
+            if [ "$name" != ".git" ]; then
+              echo "Replicating $name"
+              mkdir -p "./$name"
+              rm -rf "./$name"/*
+              rsync -a --exclude='.git' "$item/" "./$name/"
             fi
           done
 
