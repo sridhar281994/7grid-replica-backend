@@ -4,12 +4,14 @@ on:
   workflow_dispatch:
 
 jobs:
-  replicate-path:
+  replicate-routers:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout target repo (self)
+      # Checkout target repo (self)
+      - name: Checkout target repo
         uses: actions/checkout@v3
 
+      # Checkout source repo
       - name: Checkout source repo
         uses: actions/checkout@v3
         with:
@@ -17,16 +19,19 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           path: source
 
-      - name: Copy files
+      # Copy routers folder from source to target
+      - name: Replicate routers folder
         run: |
-          # Replace target folder content with source
-          rm -rf ./path-to-replace/*
-          cp -r source/path-to-copy/* ./path-to-replace/
+          # Remove old routers folder content
+          rm -rf ./routers/*
+          # Copy new content from source repo
+          cp -r source/routers/* ./routers/
 
+      # Commit & push changes
       - name: Commit & push changes
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add .
-          git commit -m "Replicated files from source repo" || echo "No changes to commit"
+          git add ./routers
+          git commit -m "Replicated routers folder from source repo" || echo "No changes to commit"
           git push
