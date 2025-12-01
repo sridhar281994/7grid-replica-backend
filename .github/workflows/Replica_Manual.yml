@@ -7,7 +7,7 @@ jobs:
   replicate-all-folders:
     runs-on: ubuntu-latest
     steps:
-      # Checkout target repo (self)
+      # Checkout target repo
       - name: Checkout target repo
         uses: actions/checkout@v3
 
@@ -19,20 +19,18 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           path: source
 
-      # Dynamically replicate all top-level folders
+      # Dynamically replicate all top-level folders, ignoring .git
       - name: Replicate all top-level folders
         run: |
-          # Loop through all top-level folders in the source repo
+          shopt -s dotglob
           for folder in source/*; do
             if [ -d "$folder" ]; then
               folder_name=$(basename "$folder")
               echo "Replicating folder: $folder_name"
-              # Ensure target folder exists
               mkdir -p ./$folder_name
-              # Remove old content
               rm -rf ./$folder_name/*
-              # Copy all files and subfolders
-              cp -a "$folder/." "./$folder_name/"
+              # Copy all files and subfolders but NOT the .git folder
+              rsync -a --exclude='.git' "$folder/" "./$folder_name/"
             fi
           done
 
