@@ -1,0 +1,49 @@
+name: Replicate Repo
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  replicate-all:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout target repo
+      - name: Checkout target repo
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+          path: target
+
+      # Checkout source repo
+      - name: Checkout source repo
+        uses: actions/checkout@v3
+        with:
+          repository: sridhar281994/7grid-backend
+          token: ${{ secrets.SOURCE_REPO_TOKEN }}
+          path: source
+
+      # Copy all files from source to target
+      - name: Copy files
+        run: |
+          rsync -a --exclude='.git' source/ target/
+
+      # Commit & push changes
+      - name: Commit & push changes
+        working-directory: target
+        env:
+          REPLICA_PUSH_TOKEN: ${{ secrets.REPLICA_PUSH_TOKEN }}
+        run: |
+          if [ -z "$REPLICA_PUSH_TOKEN" ]; then
+            echo "Missing REPLICA_PUSH_TOKEN secret with repo + workflow scopes"
+            exit 1
+          fi
+
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add .
+          git commit -m "Replicated all top-level files and folders from source repo" || echo "No changes to commit"
+          git remote set-url origin https://x-access-token:${REPLICA_PUSH_TOKEN}@github.com/sridhar281994/7grid-replica-backend.git
+          git push origin HEAD:main
