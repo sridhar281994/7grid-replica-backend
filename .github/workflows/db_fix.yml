@@ -1,27 +1,41 @@
-name: Run One-Off DB Migration
 on:
   workflow_dispatch:
+
+permissions:
+  contents: write
+
 jobs:
-  migrate:
+  replicate-all:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      # Checkout target repo
+      - name: Checkout target repo
+        uses: actions/checkout@v3
         with:
-          python-version: "3.11"
-      - name: Install dependencies
-        run: |
-          pip install sqlalchemy psycopg2-binary
-      - name: Run migration
+          persist-credentials: false
+
+      # Checkout source repo
+      - name: Checkout source repo
+            fi
+          done
+
+      - name: Clean up source checkout
+        run: rm -rf source
+
+      # Commit & push changes
+      - name: Commit & push changes
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          REPLICA_PUSH_TOKEN: ${{ secrets.REPLICA_PUSH_TOKEN }}
         run: |
-          echo ":rocket: Running one-off DB migration..."
-          python scripts/one_off_fix_add_p3_and_reset_stakes.py
+          if [ -z "$REPLICA_PUSH_TOKEN" ]; then
+            echo "Missing REPLICA_PUSH_TOKEN secret with repo + workflow scopes"
+            exit 1
+          fi
 
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add .
+          git commit -m "Replicated all top-level files and folders from source repo" || echo "No changes to commit"
 
-
-
-
+          git remote set-url origin https://x-access-token:${REPLICA_PUSH_TOKEN}@github.com/sridhar281994/7grid-replica-backend.git
+          git push origin HEAD:main
