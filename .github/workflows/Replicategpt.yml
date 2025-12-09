@@ -24,14 +24,14 @@ jobs:
           repository: sridhar281994/7grid
           token: ${{ secrets.SOURCE_REPO_TOKEN }}
           path: source
-          fetch-depth: 0   # full history for safety
+          fetch-depth: 0
 
       # Copy all files from source to target
       - name: Copy files
         run: |
           rsync -a --exclude='.git' source/ target/
 
-      # Commit & push changes to target repo
+      # Commit & push changes
       - name: Commit & push changes
         working-directory: target
         env:
